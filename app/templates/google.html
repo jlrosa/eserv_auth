@@ -1,0 +1,55 @@
+<html lang="en">
+
+<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+
+<head>
+    <meta name="google-signin-scope" content="profile email">
+    <meta name="google-signin-client_id" content="107011714930-kgg3bhcck84rh8lhn9k8mcc55ah1jab2.apps.googleusercontent.com">
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <title>Google Login JavaScript Example</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div class="g-signin2" data-onsuccess="onSignIn" data-theme="dark"></div>
+<div class="panel-title" id="username"></div>
+<script>
+    function onSignIn(googleUser) {
+        // Useful data for your client-side scripts:
+        var profile = googleUser.getBasicProfile();
+        console.log("ID: " + profile.getId()); // Don't send this directly to your server!
+        console.log("Name: " + profile.getName());
+        console.log("Image URL: " + profile.getImageUrl());
+        console.log("Email: " + profile.getEmail());
+
+        // The ID token you need to pass to your backend:
+        var id_token = googleUser.getAuthResponse().id_token;
+        console.log("ID Token: " + id_token);
+        document.getElementById('status').innerHTML =
+                'Thanks for logging in, ' + profile.getName() + '!';
+
+        addToDB(id_token);
+    };
+
+    function addToDB(token) {
+        var json = '{"network":"google", "token":"' + token + '"}';
+
+        $.ajax({
+            url: 'http://localhost:5000/auth/api/users/login/addToDB',
+            type: 'POST',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: json,
+            success: function () {
+                alert('POST completed');
+            },
+            error: function () {
+                alert('nothing happened');
+            }
+        });
+    }
+</script>
+
+<div id="status">
+</div>
+</body>
+</html>
