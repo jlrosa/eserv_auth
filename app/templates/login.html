@@ -5,6 +5,10 @@
 <link rel="stylesheet" type="text/css" href="/static/font-awesome/css/font-awesome.css" />
 <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
 
+<head>
+<title>EngServ Login Page</title>
+</head>
+
 <body>
 <div class="middlePage">
     <div class="page-header">
@@ -17,30 +21,35 @@
         </div>
         <div class="panel-body">
             <div class="row">
-                <div class="col-md-5" >
+                <div class="col-md-4" >
                     <a href="/auth/api/users/login/facebook" class="btn btn-block btn-social btn-facebook">
-                        <i class="fa fa-facebook"></i>  Sign in with Facebook
+                        <i class="fa fa-facebook"></i>  Facebook
                     </a>
-                    <a href="/auth/api/users/login/twitter" class="btn btn-block btn-social btn-twitter">
-                        <i class="fa fa-twitter"></i>  Sign in with Twitter
-                    </a>
-                    <a href="/auth/api/users/login/google" class="btn btn-block btn-social btn-google">
-                        <i class="fa fa-google"></i>  Sign in with Google
-                    </a>
+                    {% if user.name == 'a' %}
+                        <h3 />
+                    {% elif user.socialnetwork == 'facebook' %}
+                        <h3>Hello, {{ user.name }}!</h3>
+                    {% endif %}
                 </div>
-                <div class="col-md-7" style="border-left:1px solid #ccc;height:160px">
-                    <form class="form-horizontal">
-                        <fieldset id="1">
-                            <input id="usrnm" type="text" placeholder="Enter User Name" class="form-control input-md">
-                            <input id="pwd" type="text" placeholder="Enter Password" class="form-control input-md">
-                            <div class="spacing">
-                                <input type="checkbox" name="checkboxes" id="checkboxes-0" value="1"><small> Remember me</small>
-                                <a href="/auth/api/users/login/forgotpwd"><small> Forgot Password?</small></a>
-                            </div>
-                            <div class="spacing"><a href="/auth/api/users/register"><small> Not a member? Register Here!</small></a></div>
-                            <button id="login" type="button" class="btn btn-info btn-sm pull-right">Sign In</button>
-                        </fieldset>
-                    </form>
+                <div class="col-md-4" style="border-left:1px solid #ccc;height:160px">
+                    <a href="/auth/api/users/login/twitter" class="btn btn-block btn-social btn-twitter">
+                        <i class="fa fa-twitter"></i>  Twitter
+                    </a>
+                    {% if user.name == 'a' %}
+                        <h3 />
+                    {% elif user.socialnetwork == 'twitter' %}
+                        <h3>Hello, {{ user.name }}!</h3>
+                    {% endif %}
+                </div>
+                <div class="col-md-4" style="border-left:1px solid #ccc;height:160px">
+                    <a href="/auth/api/users/login/google" class="btn btn-block btn-social btn-google">
+                        <i class="fa fa-google"></i>  Google
+                    </a>
+                    {% if user.name == 'a' %}
+                        <h3 />
+                    {% elif user.socialnetwork == 'google' %}
+                        <h3>Hello, {{ user.name }}!</h3>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -48,38 +57,6 @@
 </div>
 
 <script>
-    $(function(){
-        $('#login').on('click', function (e) {
-
-            var un = document.getElementById("usrnm").value;
-            var pwd = document.getElementById("pwd").value;
-            var hashedPW = hashCode(pwd);
-
-            var json = '{"username":"' + un + '", "hashedPW":"' + hashedPW + '"}';
-
-            $.ajax({
-                url: 'http://localhost:5000/auth/api/users/login/tryLogin',
-                type: 'POST',
-                contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                data: json,
-                success: function() { alert('POST completed'); },
-                error: function() { alert('nothing happened'); }
-            });
-        });
-    });
-
-    // http://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
-    function hashCode(password) {
-        var hash = 0, i, chr, len;
-        if (password.length == 0) return hash;
-        for (i = 0, len = password.length; i < len; i++) {
-            chr   = password.charCodeAt(i);
-            hash  = ((hash << 5) - hash) + chr;
-            hash |= 0; // Convert to 32bit integer
-        }
-        return hash;
-    };
 
 </script>
 </body>
