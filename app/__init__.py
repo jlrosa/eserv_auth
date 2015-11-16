@@ -3,25 +3,19 @@ from flask_oauth import OAuth
 from flask.ext.sqlalchemy import SQLAlchemy
 from authomatic.adapters import WerkzeugAdapter
 from authomatic import Authomatic
-from authomatic.providers import oauth2
+from authomatic.providers import oauth2, oauth1
 from flasgger import Swagger
 from rauth.service import OAuth1Service
 from rauth.utils import parse_utf8_qsl
+from config import CONFIG
 
 # Documentation URL: http://localhost:5000/apidocs/index.html
 
 FACEBOOK_APP_ID = '1645713445676362'
 FACEBOOK_APP_SECRET = 'c7a14d197e7491236102b9f1f8dba1e9'
-TW_KEY = "AAAMLSOPNuRwiWP1C2ccIHTKn"
-TW_SECRET = "63qLnliFUdQtmITYvB3G8sN8g1xlzLFplOzdfL1uablGATgMZj"
-CONFIG = {
-    'google': {
-        'class_': oauth2.Google,
-        'consumer_key': '1023452814056-s6c5f9mbco09cdjbipi9lh8p707g08jh.apps.googleusercontent.com',
-        'consumer_secret': '6yzy1n9w_RVSchWYHhC7p-xI',
-        'scope': oauth2.Google.user_info_scope,
-    },
-}
+TW_KEY = "w1gNY1jr4JR8tCg5Gm0Fxc3sr"
+TW_SECRET = "cMDqfKoA7CVdVQk3AXlKT7bQjakwQ2vXIqrv0LdEczWY9eio7k"
+
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -51,6 +45,24 @@ twitter = OAuth1Service(
     access_token_url='https://api.twitter.com/oauth/access_token',
     authorize_url='https://api.twitter.com/oauth/authorize',
     base_url='https://api.twitter.com/1.1/')
+
+
+@app.route('/auth/api/users/setRegID', methods=['POST'])
+def set_regID():
+    if not request.json or not 'regID' in request.json or not 'id' in request.json:
+        abort(400)
+
+    regID = request.json.get('regID', "")
+    id = request.json['id']
+
+    user = models.User.query.get(id)
+    if user:
+        user.regid = str(regID)
+        db.session.commit()
+        return jsonify({'user': 'updated'}), 201
+
+    return jsonify({'user': 'not found'}), 401
+
 
 @app.route('/auth/api/users', methods=['GET'])
 def get_users():
@@ -110,47 +122,144 @@ def login():
         tags:
           - users, login
         """
-    username = session.get('username', None)
-    if username is None:
-        username = 'a'
-    network = session.get('network', None)
-    if network is None:
-        network = 'a'
-    user = {'name': username, 'socialnetwork': network}
+    id = session.get('user', None)
+    print(id)
+    if id is not None:
+        user = models.User.query.get(id)
+        print(user)
+        if user:
+            fb = False
+            tw = False
+            gg = False
+            if int(user.fbid) != 0:
+                fb = True
+            if int(user.twid) != 0:
+                tw = True
+            if int(user.ggid) != 0:
+                gg = True
+
+            user = {'name': user.name, 'fb': fb, 'tw': tw, 'gg': gg}
+            print(user)
+            return render_template('login.html', user=user)
+
+    user = {'name': '', 'fb': False, 'tw': False, 'gg': False}
     return render_template('login.html', user=user)
+
+
+'''@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/login/<provider_name>/', methods=['GET'])
+def loginNetwork(provider_name):
+    # We need response object for the WerkzeugAdapter.
+    response = make_response()
+
+    # Log the user in, pass it the adapter and the provider name.
+    result = authomatic.login(
+        WerkzeugAdapter(request, response),
+        provider_name,
+        session=session,
+        session_saver=lambda: app.save_session(session, response)
+    )
+
+    # If there is no LoginResult object, the login procedure is still pending.
+    if result:
+        if result.user:
+            # We need to update the user to get more info.
+            result.user.update()
+            print(result.user)
+            print(result.user.data)
+            print(result.user.content)
+            print(result.user.provider)
+            print(result.user.picture)
+            print(result.user.credentials)
+
+        # The rest happens inside the template.
+        return render_template('login_temp.html', result=result)
+
+    # Don't forget to return the response.
+    return response'''
 
 
 def addToDB(name, id, email, token, network):
     networkid = 0
+    fbid = 0
+    twid = 0
+    ggid = 0
+
+    prev_id = session.get('user', None)
+    print(prev_id)
+    if prev_id is not None:
+        user = models.User.query.get(prev_id)
+        print(user)
+        if user:
+            if int(user.fbid) != 0:
+                fbid = user.id
+            if int(user.twid) != 0:
+                twid = user.id
+            if int(user.ggid) != 0:
+                ggid = user.id
+
     users = models.User.query.all()
     for u in users:
         if network == "facebook":
             networkid = u.fbid
+            fbid = networkid
         elif network == "twitter":
             networkid = u.twid
+            twid = networkid
         elif network == "google":
             networkid = u.ggid
+            ggid = networkid
 
-        if u.email == email and int(networkid) == int(id):
-            print("found user")
+        if str(u.email) == str(email) and int(networkid) == int(id):
             if u.token == token:
                 print("same token")
+                if network == "facebook":
+                    u.twid = twid
+                    u.ggid = ggid
+                elif network == "twitter":
+                    u.fbid = fbid
+                    u.ggid = ggid
+                elif network == "google":
+                    u.fbid = fbid
+                    u.twid = twid
+                db.session.commit()
+                session['user'] = u.id
                 return 'Exists', u
             else:
-                print("different token")
+                print("diff token")
+                if network == "facebook":
+                    print("facebook")
+                    u.twid = twid
+                    u.ggid = ggid
+                elif network == "twitter":
+                    print("twitter")
+                    u.fbid = fbid
+                    u.ggid = ggid
+                elif network == "google":
+                    print("google")
+                    u.fbid = fbid
+                    u.twid = twid
                 u.token = token
                 db.session.commit()
+                session['user'] = u.id
                 return 'Updated', u
 
     if network == "facebook":
-        newUser = models.User(name=name, email=email, token=token, fbid=id)
+        newUser = models.User(name=name, email=email, token=token, fbid=id, twid=twid, ggid=ggid)
     elif network == "twitter":
-        newUser = models.User(name=name, email=email, token=token, twid=id)
+        newUser = models.User(name=name, email=email, token=token, fbid=fbid, twid=id, ggid=ggid)
     elif network == "google":
-        newUser = models.User(name=name, email=email, token=token, ggid=id)
+        newUser = models.User(name=name, email=email, token=token, fbid=fbid, twid=twid, ggid=id)
 
     db.session.add(newUser)
     db.session.commit()
+    users = models.User.query.all()
+    id = users[-1].id
+    session['user'] = id
     return 'Created', newUser
 
 
@@ -176,8 +285,6 @@ def facebook_authorized(resp):
     name = me.data['name']
     email = me.data['email']
     addToDB(name, id, email, token, 'facebook')
-    session['username'] = name
-    session['network'] = 'facebook'
     return redirect(url_for('login'))
 
 
@@ -218,16 +325,14 @@ def authorized():
         return redirect(url_for('not_found'))
 
     verify = sess.get('account/verify_credentials.json',
-                      params={'format': 'json'}).json()
+                      params={'format': 'json', 'include_email': 'true'}).json()
 
     name = verify['name']
     id = verify['id']
+    email = verify['email']
     token = sess.access_token
     secret = sess.access_token_secret
-    #print(verify['email'])
-    addToDB(name, id, '', token, 'twitter')
-    session['username'] = verify['name']
-    session['network'] = 'twitter'
+    addToDB(name, id, email, token, 'twitter')
     return redirect(url_for('login'))
 
 
@@ -248,8 +353,6 @@ def loginGg(provider_name="google"):
         email = result.user.email
         token = result.user.credentials.token
         addToDB(name, id, email, token, 'google')
-        session['username'] = result.user.name
-        session['network'] = 'google'
         return redirect(url_for('login'))
 
     return response

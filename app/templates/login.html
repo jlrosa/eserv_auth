@@ -22,32 +22,29 @@
         <div class="panel-body">
             <div class="row">
                 <div class="col-md-4" >
-                    <a href="/auth/api/users/login/facebook" class="btn btn-block btn-social btn-facebook">
-                        <i class="fa fa-facebook"></i>  Facebook
-                    </a>
-                    {% if user.name == 'a' %}
-                        <h3 />
-                    {% elif user.socialnetwork == 'facebook' %}
+                    {% if user.fb == False %}
+                        <a href="/auth/api/users/login/facebook" class="btn btn-block btn-social btn-facebook">
+                            <i class="fa fa-facebook"></i>  Facebook
+                        </a>
+                    {% else %}
                         <h3>Hello, {{ user.name }}!</h3>
                     {% endif %}
                 </div>
                 <div class="col-md-4" style="border-left:1px solid #ccc;height:160px">
-                    <a href="/auth/api/users/login/twitter" class="btn btn-block btn-social btn-twitter">
-                        <i class="fa fa-twitter"></i>  Twitter
-                    </a>
-                    {% if user.name == 'a' %}
-                        <h3 />
-                    {% elif user.socialnetwork == 'twitter' %}
+                    {% if user.tw == False %}
+                        <a href="/auth/api/users/login/twitter" class="btn btn-block btn-social btn-twitter">
+                            <i class="fa fa-twitter"></i>  Twitter
+                        </a>
+                    {% else %}
                         <h3>Hello, {{ user.name }}!</h3>
                     {% endif %}
                 </div>
                 <div class="col-md-4" style="border-left:1px solid #ccc;height:160px">
-                    <a href="/auth/api/users/login/google" class="btn btn-block btn-social btn-google">
-                        <i class="fa fa-google"></i>  Google
-                    </a>
-                    {% if user.name == 'a' %}
-                        <h3 />
-                    {% elif user.socialnetwork == 'google' %}
+                    {% if user.gg == False %}
+                        <a href="/auth/api/users/login/google" class="btn btn-block btn-social btn-google">
+                            <i class="fa fa-google"></i>  Google
+                        </a>
+                    {% else %}
                         <h3>Hello, {{ user.name }}!</h3>
                     {% endif %}
                 </div>
