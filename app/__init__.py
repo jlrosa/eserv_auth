@@ -1,6 +1,7 @@
 from flask import Flask, flash, jsonify, abort, request, redirect, make_response, render_template, session, url_for
 from flask_oauth import OAuth
 from flask.ext.sqlalchemy import SQLAlchemy
+from flask.ext.session import Session
 from authomatic.adapters import WerkzeugAdapter
 from authomatic import Authomatic
 from authomatic.providers import oauth2, oauth1
@@ -138,11 +139,11 @@ def login():
             if int(user.ggid) != 0:
                 gg = True
 
-            user = {'name': user.name, 'fb': fb, 'tw': tw, 'gg': gg}
+            user = {'name': user.name, 'id': id,'fb': fb, 'tw': tw, 'gg': gg}
             print(user)
             return render_template('login.html', user=user)
 
-    user = {'name': '', 'fb': False, 'tw': False, 'gg': False}
+    user = {'name': '', 'id': 0, 'fb': False, 'tw': False, 'gg': False}
     return render_template('login.html', user=user)
 
 
