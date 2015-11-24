@@ -1,14 +1,12 @@
-from flask import Flask, flash, jsonify, abort, request, redirect, make_response, render_template, session, url_for
-from flask_oauth import OAuth
-from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.session import Session
-from authomatic.adapters import WerkzeugAdapter
 from authomatic import Authomatic
-from authomatic.providers import oauth2, oauth1
+from authomatic.adapters import WerkzeugAdapter
+from config import CONFIG
 from flasgger import Swagger
+from flask import Flask, flash, jsonify, abort, request, redirect, make_response, render_template, session, url_for
+from flask.ext.sqlalchemy import SQLAlchemy
+from flask_oauth import OAuth
 from rauth.service import OAuth1Service
 from rauth.utils import parse_utf8_qsl
-from config import CONFIG
 
 # Documentation URL: http://localhost:5000/apidocs/index.html
 
@@ -50,6 +48,33 @@ twitter = OAuth1Service(
 
 @app.route('/auth/api/users/setRegID', methods=['POST'])
 def set_regID():
+    """
+    Sets the regID for the user with the given ID
+    ---
+    tags:
+      - users
+      - regID
+    parameters:
+      - name: id
+        in: body
+        type: int
+        description: id of the user
+      - name: regID
+        in: body
+        type: int
+        description: regID to be set
+    responses:
+      200:
+        description: The user was updated
+        schema:
+          user: status
+      400:
+        description: Request malformed
+      401:
+        description: The user doesn't exist
+        schema:
+          user: status
+    """
     if not request.json or not 'regID' in request.json or not 'id' in request.json:
         abort(400)
 
@@ -60,7 +85,7 @@ def set_regID():
     if user:
         user.regid = str(regID)
         db.session.commit()
-        return jsonify({'user': 'updated'}), 201
+        return jsonify({'user': 'updated'}), 200
 
     return jsonify({'user': 'not found'}), 401
 
@@ -68,15 +93,14 @@ def set_regID():
 @app.route('/auth/api/users', methods=['GET'])
 def get_users():
     """
-        Lists the users
-        ---
-        tags:
-          - users
-
-        responses:
-          201:
-            description: Users listed
-        """
+    Lists all the users in the database. #It's only a test service, should not be used#
+    ---
+    tags:
+      - users
+    responses:
+      200:
+        description: The list of users
+    """
     users = models.User.query.all()
     users_json = []
     for u in users:
@@ -86,21 +110,31 @@ def get_users():
             'email': u.email
         }
         users_json.append(user)
-    return jsonify({'users': users_json}), 201
+    return jsonify({'users': users_json}), 200
 
 
-@app.route('/auth/api/users/<int:regID>', methods=['GET'])
-def get_user(regID):
+'''@app.route('/auth/api/users/<int:regID>', methods=['GET'])
+def get_user_by_regid(regID):
     """
-        Lists a specific user
-        ---
-        tags:
-          - users
-
-        responses:
-          201:
-            description: User listed
-        """
+    Gives the information of an user based on his regID
+    ---
+    tags:
+      - users
+      - regID
+    parameters:
+      - name: regID
+        in: path
+        type: integer
+        description: the regID to be searched
+    responses:
+      200:
+        description: The user with the given regID
+        schema:
+          properties:
+            result:
+              type: user
+              description: The user
+    """
     users = models.User.query.all()
     for u in users:
         if regID == u.regID:
@@ -112,17 +146,49 @@ def get_user(regID):
 
     if len(user) == 0:
         abort(404)
+    return jsonify({'user': user}), 200'''
+
+
+@app.route('/auth/api/users/<int:id>', methods=['GET'])
+def get_user_by_id(id):
+    """
+    Gives the information of an user based on his id
+    ---
+    tags:
+      - users
+    parameters:
+      - name: ID
+        in: path
+        type: integer
+        description: the ID to be searched
+    responses:
+      200:
+        description: The user with the given ID
+        schema:
+          properties:
+            result:
+              type: user
+              description: The user
+      404:
+        description: User not found
+    """
+    users = models.User.query.all()
+    for u in users:
+        if id == u.id:
+            user = {
+                'id': u.id,
+                'name': u.name,
+                'email': u.email,
+                'regID': u.regid
+            }
+
+    if len(user) == 0:
+        abort(404)
     return jsonify({'user': user}), 201
 
 
 @app.route('/auth/api/users/login')
 def login():
-    """
-        Shows the Login webpage
-        ---
-        tags:
-          - users, login
-        """
     id = session.get('user', None)
     print(id)
     if id is not None:
