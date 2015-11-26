@@ -1,4 +1,4 @@
-from authomatic.providers import oauth2, oauth1, openid
+from authomatic.providers import oauth2, oauth1
 
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))

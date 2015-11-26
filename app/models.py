@@ -10,6 +10,7 @@ class User(db.Model):
     fbid = db.Column(db.String(100), index=True, default=0)
     twid = db.Column(db.String(100), index=True, default=0)
     ggid = db.Column(db.String(100), index=True, default=0)
+    photo = db.Column(db.Text)
     #facebook_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     #twitter_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     #google_id = db.Column(db.Integer, db.ForeignKey('user.id'))

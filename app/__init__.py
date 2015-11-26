@@ -7,6 +7,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from flask_oauth import OAuth
 from rauth.service import OAuth1Service
 from rauth.utils import parse_utf8_qsl
+import json
 
 # Documentation URL: http://localhost:5000/apidocs/index.html
 
@@ -107,7 +108,9 @@ def get_users():
         user = {
             'id': u.id,
             'name': u.name,
-            'email': u.email
+            'email': u.email,
+            'regID': u.regid,
+            'photo': u.photo
         }
         users_json.append(user)
     return jsonify({'users': users_json}), 200
@@ -179,7 +182,8 @@ def get_user_by_id(id):
                 'id': u.id,
                 'name': u.name,
                 'email': u.email,
-                'regID': u.regid
+                'regID': u.regid,
+                'photo': u.photo
             }
 
     if len(user) == 0:
@@ -250,7 +254,7 @@ def loginNetwork(provider_name):
     return response'''
 
 
-def addToDB(name, id, email, token, network):
+def addToDB(name, id, email, token, network, photo):
     networkid = 0
     fbid = 0
     twid = 0
@@ -316,11 +320,11 @@ def addToDB(name, id, email, token, network):
                 return 'Updated', u
 
     if network == "facebook":
-        newUser = models.User(name=name, email=email, token=token, fbid=id, twid=twid, ggid=ggid)
+        newUser = models.User(name=name, email=email, token=token, fbid=id, twid=twid, ggid=ggid, photo=photo)
     elif network == "twitter":
-        newUser = models.User(name=name, email=email, token=token, fbid=fbid, twid=id, ggid=ggid)
+        newUser = models.User(name=name, email=email, token=token, fbid=fbid, twid=id, ggid=ggid, photo=photo)
     elif network == "google":
-        newUser = models.User(name=name, email=email, token=token, fbid=fbid, twid=twid, ggid=id)
+        newUser = models.User(name=name, email=email, token=token, fbid=fbid, twid=twid, ggid=id, photo=photo)
 
     db.session.add(newUser)
     db.session.commit()
@@ -351,7 +355,10 @@ def facebook_authorized(resp):
     token = resp['access_token']
     name = me.data['name']
     email = me.data['email']
-    addToDB(name, id, email, token, 'facebook')
+    photo_query= facebook.get(id + '/picture?type=large&redirect=0')
+    data = photo_query.data['data']
+    photo = data['url']
+    addToDB(name, id, email, token, 'facebook', photo)
     return redirect(url_for('login'))
 
 
@@ -399,7 +406,9 @@ def authorized():
     email = verify['email']
     token = sess.access_token
     secret = sess.access_token_secret
-    addToDB(name, id, email, token, 'twitter')
+    photo = verify['profile_image_url']
+    photo = photo.replace("_normal", "")
+    addToDB(name, id, email, token, 'twitter', photo)
     return redirect(url_for('login'))
 
 
@@ -419,7 +428,9 @@ def loginGg(provider_name="google"):
         id = result.user.id
         email = result.user.email
         token = result.user.credentials.token
-        addToDB(name, id, email, token, 'google')
+        photo = result.user.picture
+        photo = photo.replace('?sz=50', '')
+        addToDB(name, id, email, token, 'google', photo)
         return redirect(url_for('login'))
 
     return response
