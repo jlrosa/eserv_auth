@@ -34,7 +34,7 @@ facebook = oauth.remote_app('facebook',
                             authorize_url='https://www.facebook.com/dialog/oauth',
                             consumer_key=FACEBOOK_APP_ID,
                             consumer_secret=FACEBOOK_APP_SECRET,
-                            request_token_params={'scope': 'email'}
+                            request_token_params={'scope': 'public_profile,user_friends,email'}
                             )
 
 twitter = OAuth1Service(
@@ -191,6 +191,45 @@ def get_user_by_id(id):
     return jsonify({'user': user}), 201
 
 
+@app.route('/auth/api/users/friends/<int:id>', methods=['GET'])
+def getFriends(id):
+    """
+    Gives the information of an user based on his id
+    ---
+    tags:
+      - users
+    parameters:
+      - name: ID
+        in: path
+        type: integer
+        description: the ID to be searched
+    responses:
+      200:
+        description: The user with the given ID
+        schema:
+          properties:
+            result:
+              type: user
+              description: The user
+      404:
+        description: User not found
+    """
+    u = models.User.query.get(id)
+    if not u.isFb:
+        if u.fbid is not 0:
+            u = models.User.query.get(u.fbid)
+        else:
+            return jsonify({'error': 'No account found'}), 200
+
+    session['oauth_token'] = (u.token, '')
+    resp = facebook.get('/' + u.fbid + '/friends')
+    friends = []
+    print(resp.data)
+    for f in resp.data['data']:
+        friends.append(f)
+    return jsonify({'friends': friends}), 200
+
+
 @app.route('/auth/api/users/login')
 def login():
     id = session.get('user', None)
@@ -320,7 +359,7 @@ def addToDB(name, id, email, token, network, photo):
                 return 'Updated', u
 
     if network == "facebook":
-        newUser = models.User(name=name, email=email, token=token, fbid=id, twid=twid, ggid=ggid, photo=photo)
+        newUser = models.User(name=name, email=email, token=token, fbid=id, twid=twid, ggid=ggid, photo=photo, isFb=True)
     elif network == "twitter":
         newUser = models.User(name=name, email=email, token=token, fbid=fbid, twid=id, ggid=ggid, photo=photo)
     elif network == "google":

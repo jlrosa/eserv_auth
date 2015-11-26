@@ -12,7 +12,7 @@ CONFIG = {
         'id': 1,
         'consumer_key': '1645713445676362',
         'consumer_secret': 'c7a14d197e7491236102b9f1f8dba1e9',
-        'scope': ['public_profile', 'user_about_me', 'email'],
+        'scope': ['public_profile', 'user_about_me', 'email', 'user_friends'],
     },
 
     'twitter': {
