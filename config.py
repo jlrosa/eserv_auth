@@ -7,21 +7,6 @@ SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app.db')
 SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 
 CONFIG = {
-    'facebook': {
-        'class_': oauth2.Facebook,
-        'id': 1,
-        'consumer_key': '1645713445676362',
-        'consumer_secret': 'c7a14d197e7491236102b9f1f8dba1e9',
-        'scope': ['public_profile', 'user_about_me', 'email', 'user_friends'],
-    },
-
-    'twitter': {
-        'class_': oauth1.Twitter,
-        'id': 2,
-        'consumer_key': 'AAAMLSOPNuRwiWP1C2ccIHTKn',
-        'consumer_secret': '63qLnliFUdQtmITYvB3G8sN8g1xlzLFplOzdfL1uablGATgMZj',
-    },
-
     'google': {
         'class_': oauth2.Google,
         'id': 3,

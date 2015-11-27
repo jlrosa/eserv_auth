@@ -7,7 +7,6 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from flask_oauth import OAuth
 from rauth.service import OAuth1Service
 from rauth.utils import parse_utf8_qsl
-import json
 
 # Documentation URL: http://localhost:5000/apidocs/index.html
 
@@ -58,11 +57,11 @@ def set_regID():
     parameters:
       - name: id
         in: body
-        type: int
+        type: integer
         description: id of the user
       - name: regID
         in: body
-        type: int
+        type: string
         description: regID to be set
     responses:
       200:
@@ -82,8 +81,17 @@ def set_regID():
     regID = request.json.get('regID', "")
     id = request.json['id']
 
+    print(regID)
+    print(id)
+
+    users = models.User.query.all()
+    for u in users:
+        if u.regid == str(regID):
+            u.regid = 0
+
     user = models.User.query.get(id)
     if user:
+        print(user)
         user.regid = str(regID)
         db.session.commit()
         return jsonify({'user': 'updated'}), 200
@@ -103,7 +111,7 @@ def get_users():
         description: The list of users
     """
     users = models.User.query.all()
-    users_json = []
+    friends_json = []
     for u in users:
         user = {
             'id': u.id,
@@ -112,44 +120,8 @@ def get_users():
             'regID': u.regid,
             'photo': u.photo
         }
-        users_json.append(user)
-    return jsonify({'users': users_json}), 200
-
-
-'''@app.route('/auth/api/users/<int:regID>', methods=['GET'])
-def get_user_by_regid(regID):
-    """
-    Gives the information of an user based on his regID
-    ---
-    tags:
-      - users
-      - regID
-    parameters:
-      - name: regID
-        in: path
-        type: integer
-        description: the regID to be searched
-    responses:
-      200:
-        description: The user with the given regID
-        schema:
-          properties:
-            result:
-              type: user
-              description: The user
-    """
-    users = models.User.query.all()
-    for u in users:
-        if regID == u.regID:
-            user = {
-                'id': u.id,
-                'name': u.name,
-                'email': u.email
-            }
-
-    if len(user) == 0:
-        abort(404)
-    return jsonify({'user': user}), 200'''
+        friends_json.append(user)
+    return jsonify({'users': friends_json}), 200
 
 
 @app.route('/auth/api/users/<int:id>', methods=['GET'])
@@ -175,16 +147,14 @@ def get_user_by_id(id):
       404:
         description: User not found
     """
-    users = models.User.query.all()
-    for u in users:
-        if id == u.id:
-            user = {
-                'id': u.id,
-                'name': u.name,
-                'email': u.email,
-                'regID': u.regid,
-                'photo': u.photo
-            }
+    u = models.User.query.get(id)
+    user = {
+        'id': u.id,
+        'name': u.name,
+        'email': u.email,
+        'regID': u.regid,
+        'photo': u.photo
+    }
 
     if len(user) == 0:
         abort(404)
@@ -194,10 +164,11 @@ def get_user_by_id(id):
 @app.route('/auth/api/users/friends/<int:id>', methods=['GET'])
 def getFriends(id):
     """
-    Gives the information of an user based on his id
+    Gives the list of friends who also use the app
     ---
     tags:
       - users
+      - friends
     parameters:
       - name: ID
         in: path
@@ -205,14 +176,12 @@ def getFriends(id):
         description: the ID to be searched
     responses:
       200:
-        description: The user with the given ID
+        description: The list of friends of the user with the given ID who use the application
         schema:
           properties:
             result:
-              type: user
-              description: The user
-      404:
-        description: User not found
+              type: friends
+              description: List of friends who use the application (the list can be empty)
     """
     u = models.User.query.get(id)
     if not u.isFb:
@@ -224,10 +193,21 @@ def getFriends(id):
     session['oauth_token'] = (u.token, '')
     resp = facebook.get('/' + u.fbid + '/friends')
     friends = []
-    print(resp.data)
     for f in resp.data['data']:
-        friends.append(f)
-    return jsonify({'friends': friends}), 200
+        friends.append(f['id'])
+
+    friends_json = []
+    for f in friends:
+        u = models.User.query.filter_by(fbid=f).first()
+        user = {
+            'id': u.id,
+            'name': u.name,
+            'email': u.email,
+            'regID': u.regid,
+            'photo': u.photo
+        }
+        friends_json.append(user)
+    return jsonify({'friends': friends_json}), 200
 
 
 @app.route('/auth/api/users/login')
@@ -254,43 +234,6 @@ def login():
 
     user = {'name': '', 'id': 0, 'fb': False, 'tw': False, 'gg': False}
     return render_template('login.html', user=user)
-
-
-'''@app.route('/')
-def index():
-    return render_template('index.html')
-
-
-@app.route('/login/<provider_name>/', methods=['GET'])
-def loginNetwork(provider_name):
-    # We need response object for the WerkzeugAdapter.
-    response = make_response()
-
-    # Log the user in, pass it the adapter and the provider name.
-    result = authomatic.login(
-        WerkzeugAdapter(request, response),
-        provider_name,
-        session=session,
-        session_saver=lambda: app.save_session(session, response)
-    )
-
-    # If there is no LoginResult object, the login procedure is still pending.
-    if result:
-        if result.user:
-            # We need to update the user to get more info.
-            result.user.update()
-            print(result.user)
-            print(result.user.data)
-            print(result.user.content)
-            print(result.user.provider)
-            print(result.user.picture)
-            print(result.user.credentials)
-
-        # The rest happens inside the template.
-        return render_template('login_temp.html', result=result)
-
-    # Don't forget to return the response.
-    return response'''
 
 
 def addToDB(name, id, email, token, network, photo):
