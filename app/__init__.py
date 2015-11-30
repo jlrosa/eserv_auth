@@ -81,9 +81,6 @@ def set_regID():
     regID = request.json.get('regID', "")
     id = request.json['id']
 
-    print(regID)
-    print(id)
-
     users = models.User.query.all()
     for u in users:
         if u.regid == str(regID):
@@ -91,7 +88,6 @@ def set_regID():
 
     user = models.User.query.get(id)
     if user:
-        print(user)
         user.regid = str(regID)
         db.session.commit()
         return jsonify({'user': 'updated'}), 200
@@ -218,10 +214,8 @@ def getFriends(id):
 @app.route('/auth/api/users/login')
 def login():
     id = session.get('user', None)
-    print(id)
     if id is not None:
         user = models.User.query.get(id)
-        print(user)
         if user:
             fb = False
             tw = False
@@ -234,7 +228,6 @@ def login():
                 gg = True
 
             user = {'name': user.name, 'id': id,'fb': fb, 'tw': tw, 'gg': gg}
-            print(user)
             return render_template('login.html', user=user)
 
     user = {'name': '', 'id': 0, 'fb': False, 'tw': False, 'gg': False}
@@ -246,11 +239,12 @@ def addToDB(name, id, email, token, network, photo):
     fbid = 0
     twid = 0
     ggid = 0
+    defined = False
 
     prev_id = session.get('user', None)
-    print(prev_id)
     if prev_id is not None:
         user = models.User.query.get(prev_id)
+        defined = True
         print(user)
         if user:
             if int(user.fbid) != 0:
@@ -261,6 +255,7 @@ def addToDB(name, id, email, token, network, photo):
                 ggid = user.id
 
     users = models.User.query.all()
+    count = len(users)
     for u in users:
         if network == "facebook":
             networkid = u.fbid
@@ -276,31 +271,52 @@ def addToDB(name, id, email, token, network, photo):
             if u.token == token:
                 print("same token")
                 if network == "facebook":
-                    u.twid = twid
-                    u.ggid = ggid
+                    if twid != 0:
+                        u.twid = twid
+                    if ggid != 0:
+                        u.ggid = ggid
+                    if defined:
+                        user.fbid = count
                 elif network == "twitter":
-                    u.fbid = fbid
-                    u.ggid = ggid
+                    if fbid != 0:
+                        u.fbid = fbid
+                    if ggid != 0:
+                        u.ggid = ggid
+                    if defined:
+                        user.twid = count
                 elif network == "google":
-                    u.fbid = fbid
-                    u.twid = twid
+                    if fbid != 0:
+                        u.fbid = fbid
+                    if twid != 0:
+                        u.twid = twid
+                    if defined:
+                        user.ggid = count
                 db.session.commit()
                 session['user'] = u.id
                 return 'Exists', u
             else:
                 print("diff token")
                 if network == "facebook":
-                    print("facebook")
-                    u.twid = twid
-                    u.ggid = ggid
+                    if twid != 0:
+                        u.twid = twid
+                    if ggid != 0:
+                        u.ggid = ggid
+                    if defined:
+                        user.fbid = count
                 elif network == "twitter":
-                    print("twitter")
-                    u.fbid = fbid
-                    u.ggid = ggid
+                    if fbid != 0:
+                        u.fbid = fbid
+                    if ggid != 0:
+                        u.ggid = ggid
+                    if defined:
+                        user.twid = count
                 elif network == "google":
-                    print("google")
-                    u.fbid = fbid
-                    u.twid = twid
+                    if fbid != 0:
+                        u.fbid = fbid
+                    if twid != 0:
+                        u.twid = twid
+                    if defined:
+                        user.ggid = count
                 u.token = token
                 db.session.commit()
                 session['user'] = u.id
@@ -308,10 +324,16 @@ def addToDB(name, id, email, token, network, photo):
 
     if network == "facebook":
         newUser = models.User(name=name, email=email, token=token, fbid=id, twid=twid, ggid=ggid, photo=photo, isFb=True)
+        if defined:
+            user.fbid = count + 1
     elif network == "twitter":
         newUser = models.User(name=name, email=email, token=token, fbid=fbid, twid=id, ggid=ggid, photo=photo)
+        if defined:
+            user.twid = count + 1
     elif network == "google":
         newUser = models.User(name=name, email=email, token=token, fbid=fbid, twid=twid, ggid=id, photo=photo)
+        if defined:
+            user.ggid = count + 1
 
     db.session.add(newUser)
     db.session.commit()
