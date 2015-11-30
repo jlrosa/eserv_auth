@@ -184,6 +184,9 @@ def getFriends(id):
               description: List of friends who use the application (the list can be empty)
     """
     u = models.User.query.get(id)
+    if not u:
+        return jsonify({'error': 'No account found'}), 200
+
     if not u.isFb:
         if int(u.fbid) is not 0:
             u = models.User.query.get(u.fbid)
