@@ -185,8 +185,10 @@ def getFriends(id):
     """
     u = models.User.query.get(id)
     if not u.isFb:
-        if u.fbid is not 0:
+        if int(u.fbid) is not 0:
             u = models.User.query.get(u.fbid)
+            if not u.isFb and int(u.fbid) is not 0:
+                u = models.User.query.get(u.fbid)
         else:
             return jsonify({'error': 'No account found'}), 200
 
