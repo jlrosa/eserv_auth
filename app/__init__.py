@@ -10,10 +10,10 @@ from rauth.utils import parse_utf8_qsl
 
 # Documentation URL: http://localhost:5000/apidocs/index.html
 
-FACEBOOK_APP_ID = '1645713445676362'
-FACEBOOK_APP_SECRET = 'c7a14d197e7491236102b9f1f8dba1e9'
-TW_KEY = "w1gNY1jr4JR8tCg5Gm0Fxc3sr"
-TW_SECRET = "cMDqfKoA7CVdVQk3AXlKT7bQjakwQ2vXIqrv0LdEczWY9eio7k"
+FACEBOOK_APP_ID = 'APP_ID'
+FACEBOOK_APP_SECRET = 'APP_SECRET'
+TW_KEY = "APP_KEY"
+TW_SECRET = "APP_SECRET"
 
 
 app = Flask(__name__)
